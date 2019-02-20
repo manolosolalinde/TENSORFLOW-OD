@@ -1,7 +1,7 @@
 IMAGES="detect_n_label/example_data/datalab_dog_dataset/images"
 ANNOTATIONS="detect_n_label/example_data/datalab_dog_dataset/annotations"
 
-# Nota: label debe coincidir con los nombre de imagen, ej dog_001.jpg y con la class en el documento cvs
+# Nota: label debe coincidir con los nombre de imagen, ej dog_001.jpg y con la class en el documento csv
 
 # Create train data:
 python3 detect_n_label/generate_tfrecord.py \
