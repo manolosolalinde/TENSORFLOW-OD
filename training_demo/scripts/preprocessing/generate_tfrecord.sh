@@ -10,8 +10,8 @@ python3 detect_n_label/generate_tfrecord.py \
     --img_path=$IMAGES/train \
     --output_path=$ANNOTATIONS/train.record
 
-# Create test data:
+# Create eval data:
 python3 detect_n_label/generate_tfrecord.py \
-    --label=dog --csv_input=$ANNOTATIONS/test_labels.csv \
-    --img_path=$IMAGES/test \
-    --output_path=$ANNOTATIONS/test.record
+    --label=dog --csv_input=$ANNOTATIONS/eval_labels.csv \
+    --img_path=$IMAGES/eval \
+    --output_path=$ANNOTATIONS/eval.record

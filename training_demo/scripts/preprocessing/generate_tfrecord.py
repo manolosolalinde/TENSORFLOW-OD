@@ -4,8 +4,8 @@ Usage:
 # Create train data:
 python generate_tfrecord.py --label=<LABEL> --csv_input=<PATH_TO_ANNOTATIONS_FOLDER>/train_labels.csv  --output_path=<PATH_TO_ANNOTATIONS_FOLDER>/train.record
 
-# Create test data:
-python generate_tfrecord.py --label=<LABEL> --csv_input=<PATH_TO_ANNOTATIONS_FOLDER>/test_labels.csv  --output_path=<PATH_TO_ANNOTATIONS_FOLDER>/test.record
+# Create eval data:
+python generate_tfrecord.py --label=<LABEL> --csv_input=<PATH_TO_ANNOTATIONS_FOLDER>/eval_labels.csv  --output_path=<PATH_TO_ANNOTATIONS_FOLDER>/eval.record
 """
 
 from __future__ import division
