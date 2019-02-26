@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from PIL import Image
 
 import cv2
-cap = cv2.VideoCapture('data/cut2.mp4')
+cap = cv2.VideoCapture('../auxiliar/data/cut2.mp4')
 
 
 from object_detection.utils import label_map_util
@@ -23,28 +23,33 @@ from object_detection.utils import visualization_utils as vis_util
 # # Model preparation 
 
 # What model to download.
-MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
-MODEL_FILE = MODEL_NAME + '.tar.gz'
-DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
+MODEL_DIR = '../auxiliar/'
+# MODEL_NAME = 'fine_tuned_model_20190221-044234'
+# MODEL_NAME = 'ssd_inception_v2_coco_2018_01_28'
+# MODEL_NAME = 'fine_tuned_model_20190225-204516'
+# MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
+MODEL_NAME = 'fine_tuned_model_20190226-'
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
+PATH_TO_CKPT = MODEL_DIR + MODEL_NAME + '/frozen_inference_graph.pb'
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
+# PATH_TO_LABELS = os.path.join('../auxiliar/data', 'mscoco_label_map.pbtxt')
+PATH_TO_LABELS = os.path.join('../auxiliar/data', 'ball_label_map.pbtxt')
 
-NUM_CLASSES = 90
+NUM_CLASSES = 1
 
 
 # ## Download Model
-
-opener = urllib.request.URLopener()
-opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
-tar_file = tarfile.open(MODEL_FILE)
-for file in tar_file.getmembers():
-  file_name = os.path.basename(file.name)
-  if 'frozen_inference_graph.pb' in file_name:
-    tar_file.extract(file, os.getcwd())
+MODEL_FILE = MODEL_NAME + '.tar.gz'
+DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
+# opener = urllib.request.URLopener()
+# opener.retrieve(DOWNLOAD_BASE + MODEL_FILE,MODEL_DIR + MODEL_FILE)
+# tar_file = tarfile.open(MODEL_DIR + MODEL_FILE)
+# for file in tar_file.getmembers():
+#   file_name = os.path.basename(file.name)
+#   if 'frozen_inference_graph.pb' in file_name:
+#     tar_file.extract(file,MODEL_DIR) #os.getcwd 
 
 
 # ## Load a (frozen) Tensorflow model into memory.
@@ -74,7 +79,6 @@ def load_image_into_numpy_array(image):
       (im_height, im_width, 3)).astype(np.uint8)
 
 # # Detection
-
 with detection_graph.as_default():
   with tf.Session(graph=detection_graph) as sess:
     while True:
