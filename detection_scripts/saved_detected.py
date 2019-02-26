@@ -11,6 +11,7 @@ import tensorflow as tf
 from lxml import etree as et
 from matplotlib import pyplot as plt
 from PIL import Image
+import six.moves.urllib as urllib
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
@@ -21,6 +22,18 @@ def load_image_into_numpy_array(image):
     (im_width, im_height) = image.size
     return np.array(image.getdata()).reshape(
         (im_height, im_width, 3)).astype(np.uint8)
+
+# Download and extract model. ex:
+# MODEL_FILE = 'ssd_mobilenet_v1_coco_11_06_2017.tar.gz'
+# DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
+def download_model(DOWNLOAD_BASE,MODEL_FILE):
+  opener = urllib.request.URLopener()
+  opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
+  tar_file = tarfile.open(MODEL_FILE)
+  for file in tar_file.getmembers():
+    file_name = os.path.basename(file.name)
+    if 'frozen_inference_graph.pb' in file_name:
+      tar_file.extract(file, os.getcwd())
 
 
 def save_xml(prefix, pd_output, category_index,outputshape,cropedshape):
@@ -67,7 +80,14 @@ def save_xml(prefix, pd_output, category_index,outputshape,cropedshape):
             annotation, pretty_print=True).decode('utf-8'))
 
 
-def main():
+def main(inputfile = '../auxiliar/data/cut2.mp4',
+    modelpath = '../auxiliar/fine_tuned_model_20190226-',
+    PATH_TO_LABELS = os.path.join('../auxiliar/data', 'ball_label_map.pbtxt'),
+    class_name = 'sports ball',
+    cropedshape = tuple([80, 60]),
+    outputshape = tuple([640, 480]),
+    NUM_CLASSES = 90,
+    crop = False):
 
     try:
       import google.colab
@@ -79,15 +99,7 @@ def main():
     # Model initial configuration
     # MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
     # MODEL_NAME = 'fine_tuned_model_20190221-044234'
-    modelpath = '../auxiliar/fine_tuned_model_20190226-'
     # PATH_TO_LABELS = os.path.join('../auxiliar/data', 'mscoco_label_map.pbtxt')
-    PATH_TO_LABELS = os.path.join('../auxiliar/data', 'ball_label_map.pbtxt')
-    NUM_CLASSES = 90
-    class_name = 'sports ball' #the script will search for this object
-    inputfile = '../auxiliar/data/cut2.mp4'
-    cropedshape = tuple([80, 60])
-    outputshape = tuple([640, 480])
-    crop = False
 
     crop_offset = 15
 
@@ -211,7 +223,7 @@ def main():
                 num_detections = detection_graph.get_tensor_by_name(
                     'num_detections:0')
                 # Actual detection.
-                (boxes, scores, classes, num_detections) = sess.ruqn(
+                (boxes, scores, classes, num_detections) = sess.run(
                     [boxes, scores, classes, num_detections],
                     feed_dict={image_tensor: image_np_expanded})
 
