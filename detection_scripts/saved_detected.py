@@ -12,6 +12,8 @@ from lxml import etree as et
 from matplotlib import pyplot as plt
 from PIL import Image
 import six.moves.urllib as urllib
+# import urllib.request
+import tarfile
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util

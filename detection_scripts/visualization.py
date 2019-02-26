@@ -43,7 +43,6 @@ x_max_list = xml_df['xmax'].values
 y_min_list = xml_df['ymin'].values
 y_max_list = xml_df['ymax'].values
 
-
 import matplotlib.pyplot as plt
 from matplotlib import patches, patheffects
 import cv2
@@ -95,11 +94,6 @@ def open_image(fn):
             return cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         except Exception as e:
             raise OSError('Error handling image at: {}'.format(fn)) from e
-
-
-
-
-
 
 sample_n = 5
 for i in range(0,len(images_list)-1):
