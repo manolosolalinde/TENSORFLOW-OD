@@ -8,18 +8,27 @@ requires an output_data folder with images .jpg and corresponding .xml files
 sys.path.append("/mnt/3E0CAB3B0CAAECD9/NMS/PROGRAMACION_NMS/TENSORFLOW-OD/training_demo/scripts/preprocessing/")
 import split_data
 
+# impath = 'output_data'
+impath = 'cropped_unsplited_data'
+zipfilename = 'cropped_data.zip'
+
 initial_path = os.getcwd()
-assert(os.path.isdir(initial_path+'/output_data'))
-os.chdir(initial_path+'/output_data')
-os.system("mkdir images")
-os.system("mkdir annotations")
-os.system("mv *.jpg images/")
-os.system("mv *.xml images/")
-os.chdir(initial_path+'/output_data/images')
+assert(os.path.isdir(impath))
+# os.chdir(os.path.join(initial_path,impath))
+imdir = os.path.join(impath,'images')
+os.system("mkdir "+imdir)
+assert(os.path.isdir(imdir))
 
+anndir = os.path.join(impath,'annotations')
+os.system("mkdir "+anndir)
+assert(os.path.isdir(imdir))
+
+os.system("mv {}/*.jpg ".format(impath)+imdir)
+os.system("mv {}/*.xml ".format(impath)+imdir)
+
+os.chdir(imdir)
 split_data.split_data()
-
 os.chdir(initial_path)
 
-os.system("cd output_data/; zip -r data_g3.zip annotations images")
+os.system("cd {}; zip -r {} annotations images".format(impath,zipfilename))
 
