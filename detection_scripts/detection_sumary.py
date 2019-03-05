@@ -6,6 +6,8 @@ from object_detection.core import standard_fields
 from object_detection.metrics import tf_example_parser
 from object_detection.utils import label_map_util
 
+import pandas as pd
+
 flags = tf.app.flags
 
 flags.DEFINE_string('label_map', None, 'Path to the label map')
@@ -32,6 +34,70 @@ def compute_iou(groundtruth_box, detection_box):
 
     return intersection / float(boxAArea + boxBArea - intersection)
 
+def get_dataframe(detections_record, categories):
+    record_iterator = tf.python_io.tf_record_iterator(path=detections_record)
+    data_parser = tf_example_parser.TfExampleDetectionAndGTParser()
+
+    confusion_matrix = np.zeros(shape=(len(categories) + 1, len(categories) + 1))
+    df = pd.DataFrame(columns=('iou','score','class','filename'))
+    image_index = 0
+    for string_record in record_iterator:
+        example = tf.train.Example()
+        example.ParseFromString(string_record)
+        decoded_dict = data_parser.parse(example)
+        
+        image_index += 1
+        
+        if decoded_dict:
+            groundtruth_boxes = decoded_dict[standard_fields.InputDataFields.groundtruth_boxes]
+            groundtruth_classes = decoded_dict[standard_fields.InputDataFields.groundtruth_classes]
+            
+            detection_scores = decoded_dict[standard_fields.DetectionResultFields.detection_scores]
+            detection_classes = decoded_dict[standard_fields.DetectionResultFields.detection_classes][detection_scores >= CONFIDENCE_THRESHOLD]
+            detection_boxes = decoded_dict[standard_fields.DetectionResultFields.detection_boxes][detection_scores >= CONFIDENCE_THRESHOLD]
+
+            detection_filename = decoded_dict[standard_fields.DetectionResultFields.key].decode("utf-8") 
+            matches = []
+            
+            if image_index % 100 == 0:
+                print("Processed %d images" %(image_index))
+            
+            for i in range(len(groundtruth_boxes)):
+                for j in range(len(detection_boxes)):
+                    iou = compute_iou(groundtruth_boxes[i], detection_boxes[j])
+                    
+                    if iou > IOU_THRESHOLD:
+                        matches.append([i, j, iou])
+                    
+            matches = np.array(matches)
+            if matches.shape[0] > 0:
+                # Sort list of matches by descending IOU so we can remove duplicate detections
+                # while keeping the highest IOU entry.
+                matches = matches[matches[:, 2].argsort()[::-1][:len(matches)]]
+                
+                # Remove duplicate detections from the list.
+                matches = matches[np.unique(matches[:,1], return_index=True)[1]]
+                
+                # Sort the list again by descending IOU. Removing duplicates doesn't preserve
+                # our previous sort.
+                matches = matches[matches[:, 2].argsort()[::-1][:len(matches)]]
+                
+                # Remove duplicate ground truths from the list.
+                matches = matches[np.unique(matches[:,0], return_index=True)[1]]
+            
+            #para el primer elemento de matches
+            if len(matches)>0:
+                iou = matches[0][2]
+                ground_class = groundtruth_classes[int(matches[0][0])]
+                detection_class = detection_classes[int(matches[0][1])]
+                detection_score = detection_scores[int(matches[0][1])]
+
+                if ground_class==detection_class:
+                    df.loc[len(df)]=[iou,detection_score,detection_class,detection_filename]
+
+    return df
+        
+
 def process_detections(detections_record, categories):
     record_iterator = tf.python_io.tf_record_iterator(path=detections_record)
     data_parser = tf_example_parser.TfExampleDetectionAndGTParser()
@@ -54,6 +120,7 @@ def process_detections(detections_record, categories):
             detection_classes = decoded_dict[standard_fields.DetectionResultFields.detection_classes][detection_scores >= CONFIDENCE_THRESHOLD]
             detection_boxes = decoded_dict[standard_fields.DetectionResultFields.detection_boxes][detection_scores >= CONFIDENCE_THRESHOLD]
             
+            detection_filename = decoded_dict[standard_fields.DetectionResultFields.key].decode("utf-8") 
             matches = []
             
             if image_index % 100 == 0:
@@ -98,9 +165,9 @@ def process_detections(detections_record, categories):
 
     return confusion_matrix
 
-def display(confusion_matrix, categories):
-    print("\nConfusion Matrix:")
-    print(confusion_matrix, "\n")
+def display(confusion_matrix, categories,df):
+    # print("\nConfusion Matrix:")
+    # print(confusion_matrix, "\n")
 
     for i in range(len(categories)):
         id = categories[i]["id"] - 1
@@ -112,6 +179,8 @@ def display(confusion_matrix, categories):
         precision = float(confusion_matrix[id, id] / total_predicted)
         recall = float(confusion_matrix[id, id] / total_target)
         
+        print('mean IOU_{}@{}IOU: {:.2f}'.format(name, IOU_THRESHOLD, df.mean().iou))
+        print('mean SCORE_{}@{}IOU: {:.2f}'.format(name, IOU_THRESHOLD, df.mean().score))
         print('precision_{}@{}IOU: {:.2f}'.format(name, IOU_THRESHOLD, precision))
         print('recall_{}@{}IOU: {:.2f}'.format(name, IOU_THRESHOLD, recall))
 
@@ -124,10 +193,13 @@ def main(argv):
 
     label_map = label_map_util.load_labelmap(FLAGS.label_map)
     categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=100, use_display_name=True)
+    global IOU_THRESHOLD
+    IOU_THRESHOLD_LIST = [0.5,0.6,0.7,0.8,0.9]
+    for iou in IOU_THRESHOLD_LIST:
+        IOU_THRESHOLD = iou
+        confusion_matrix = process_detections(FLAGS.detections_record, categories)
+        df = get_dataframe(FLAGS.detections_record, categories)
+        display(confusion_matrix, categories,df)    
 
-    confusion_matrix = process_detections(FLAGS.detections_record, categories)
-
-    display(confusion_matrix, categories)    
-    
 if __name__ == '__main__':
     tf.app.run(main)
